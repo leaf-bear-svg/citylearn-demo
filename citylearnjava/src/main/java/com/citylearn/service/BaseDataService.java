@@ -9,25 +9,23 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.citylearn.dao.*;
 import com.citylearn.entity.*;
+import com.citylearn.param.PyFileParam;
 import com.citylearn.vo.BuildingDataVO;
 import com.citylearn.vo.KpisTransVO;
 import com.citylearn.vo.KpisVO;
+import com.citylearn.vo.PyFileVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.StringReader;
+import java.io.*;
 import java.math.BigDecimal;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -58,6 +56,8 @@ public class BaseDataService{
     private WeatherMapper weatherMapper;
     @Resource
     private KpisMapper kpisMapper;
+    @Resource
+    private PyFileMapper pyFileMapper;
 
     // 使用普通 Map，并通过 @PostConstruct 初始化
     private static Map<String, BaseMapper> BUILDING_MAPPER = new HashMap<>();
@@ -210,6 +210,76 @@ public class BaseDataService{
         }
 
         return returnList;
+    }
+
+    public List<PyFileVO> getPyFileList(String createUser) {
+        List<PyFile> list=pyFileMapper.getPyFileList(createUser);
+        List<PyFileVO> returnList=JSON.parseArray(JSON.toJSONString(list),PyFileVO.class);
+        return returnList;
+    }
+
+    private static final String basePath="D:\\citylearn-demo\\citylearnpy\\";
+
+    public String getPyFile(String id) {
+        PyFile pyFile = pyFileMapper.selectById(id);
+
+        try {
+            return new String(Files.readAllBytes(Paths.get(basePath+pyFile.getFileName())));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
+    public void savePyFile(PyFileParam pyFileParam) throws Exception {
+        PyFile pyFile = pyFileMapper.selectById(pyFileParam.getId());
+
+        if(null!=pyFileParam.getFileName()){
+            List<PyFile> list=pyFileMapper.selectList(new QueryWrapper<PyFile>().lambda()
+                    .eq(PyFile::getFileName,pyFileParam.getFileName())
+                    .ne(PyFile::getId,pyFile.getId()));
+            if(null!=list && list.size()>0){
+                throw new Exception("文件名已存在");
+            }
+
+            Path source = Paths.get(basePath+pyFile.getFileName());
+            Path target = Paths.get(basePath+pyFileParam.getFileName());
+            try {
+                Files.move(source, target);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            pyFile.setFileName(pyFileParam.getFileName());
+            pyFileMapper.updateById(pyFile);
+
+        }else if(null!=pyFileParam.getDescription()){
+            pyFile.setDescription(pyFileParam.getDescription());
+            pyFileMapper.updateById(pyFile);
+        }else{
+            Files.write(Paths.get(basePath+pyFile.getFileName()),pyFileParam.getCode().getBytes());
+        }
+
+
+
+    }
+
+    public PyFileVO addPyFile() throws IOException {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+        Date newDate = new Date();
+        PyFile pyFile=new PyFile();
+        pyFile.setId(sdf.format(newDate));
+        pyFile.setFileName(pyFile.getId()+".py");
+        pyFile.setDescription("无");
+        pyFile.setCreateUser("admin");
+        pyFile.setIfSystem(false);
+        pyFile.setCreateTime(newDate);
+        pyFileMapper.insert(pyFile);
+        Files.createFile(Paths.get(basePath+pyFile.getFileName()));
+        return JSON.parseObject(JSON.toJSONString(pyFile),PyFileVO.class);
+    }
+
+    public void deletePyFile(PyFileParam pyFileParam) {
+        pyFileMapper.deleteById(pyFileParam.getId());
     }
 
     @FunctionalInterface

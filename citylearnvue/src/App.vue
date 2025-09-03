@@ -1,145 +1,69 @@
 <template>
-  <el-config-provider>
-    <div class="app-container">
-      <el-container>
-        <el-header>
-          <div class="header-content">
-            <h1>城市能源规划系统</h1>
-          </div>
-        </el-header>
-        
-        <el-container class="main-container">
-          <el-aside width="220px">
-            <el-menu
-              v-model="activeIndex"
-              class="el-menu-vertical"
-              @select="handleMenuSelect">
-              <el-menu-item index="1">
-                <el-icon><DataLine /></el-icon>
-                <span>能源消耗统计</span>
-              </el-menu-item>
-              <el-menu-item index="2">
-                <el-icon><TrendCharts /></el-icon>
-                <span>能源趋势分析</span>
-              </el-menu-item>
-              <el-menu-item index="3">
-                <el-icon><MapLocation /></el-icon>
-                <span>区域能源分布</span>
-              </el-menu-item>
-            </el-menu>
-          </el-aside>
-          
-          <el-main>
-            <div class="main-content">
-              <component :is="currentComponent" />
-            </div>
-          </el-main>
-        </el-container>
-      </el-container>
-    </div>
-  </el-config-provider>
+  <div id="app">
+    <el-container style="height: 100vh;">
+      <el-aside width="200px" style="background-color: #545c64">
+        <el-menu
+          default-active="dataList"
+          background-color="#545c64"
+          text-color="#fff"
+          active-text-color="#ffd04b"
+          @select="handleMenuSelect">
+          <el-menu-item index="dataList">
+            <i class="el-icon-menu"></i>
+            <span>原始数据</span>
+          </el-menu-item>
+          <el-menu-item index="kpiList">
+            <i class="el-icon-document"></i>
+            <span>指标数据</span>
+          </el-menu-item>
+          <el-menu-item index="codeEditor">
+            <i class="el-icon-edit"></i>
+            <span>代码编辑器</span>
+          </el-menu-item>
+        </el-menu>
+      </el-aside>
+      
+      <el-main>
+        <component :is="currentComponent"/>
+      </el-main>
+    </el-container>
+  </div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
-import { DataLine, TrendCharts, MapLocation } from '@element-plus/icons-vue'
-import EnergyConsumption from './components/EnergyConsumption.vue'
-import EnergyTrend from './components/EnergyTrend.vue'
-import EnergyDistribution from './components/EnergyDistribution.vue'
+<script>
+import DataList from './components/DataList.vue'
+import KpiList from './components/KpiList.vue'
+import MonacoEditor from './components/MonacoEditor.vue'
 
-const activeIndex = ref('1')
-const currentComponent = ref(EnergyConsumption)
-
-const handleMenuSelect = (index) => {
-  switch(index) {
-    case '1':
-      currentComponent.value = EnergyConsumption
-      break
-    case '2':
-      currentComponent.value = EnergyTrend
-      break
-    case '3':
-      currentComponent.value = EnergyDistribution
-      break
+export default {
+  name: 'App',
+  components: {
+    DataList,
+    KpiList,
+    MonacoEditor
+  },
+  data() {
+    return {
+      currentComponent: 'DataList'
+    }
+  },
+  methods: {
+    handleMenuSelect(index) {
+      this.currentComponent = index === 'dataList' ? 'DataList' : 
+                            index === 'kpiList' ? 'KpiList' : 'MonacoEditor';
+    }
   }
 }
 </script>
 
 <style>
-.app-container {
-  height: 100vh;
-  width: 100vw;
-  display: flex;
-  flex-direction: column;
-  background-color: #f5f7fa;
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
+#app {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #2c3e50;
 }
-
-.el-header {
-  background-color: #409EFF;
-  color: white;
-  padding: 0;
-  z-index: 1000;
-}
-
-.header-content {
-  height: 60px;
-  display: flex;
-  align-items: left;
-  padding: 0 24px;
-  width: 100%;
-}
-
-.main-container {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-}
-
-.el-aside {
-  background-color: #fff;
-  border-right: solid 1px #e6e6e6;
-  width: 220px !important;
-  z-index: 900;
-  margin-left: 0;
-  position: absolute;
-  left: 0;
-}
-
-.el-menu-vertical {
-  height: calc(100vh - 60px);
-  width: 220px;
-  margin-left: 0;
-}
-
-.el-main {
-  padding: 0;
-  overflow: auto;
-  flex: 1;
-  background-color: #fff;
-  margin: 0;
-}
-
-.main-content {
-  width: 100%;
-  min-height: calc(100vh - 60px);
-  overflow-y: auto;
-  padding: 24px;
-  margin: 0;
-}
-
-/* 重置一些基础样式 */
-body {
-  margin: 0;
-  padding: 0;
-  background-color: #f5f7fa;
-  overflow: hidden;
-}
-
-h1 {
-  margin: 0;
-  font-size: 20px;
+.el-menu {
+  border-right: none;
 }
 </style>

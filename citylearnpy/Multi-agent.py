@@ -41,7 +41,7 @@ model = config.build()
 # 训练模型
 for i in range(20):
     _ = model.train()
-
+111
 # 测试模型
 env = RLlibMultiAgentEnv(env_config)
 observations, _ = env.reset()
